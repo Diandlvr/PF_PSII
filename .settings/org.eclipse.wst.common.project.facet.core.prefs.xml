@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+	<facet id="jst.web">
+		<node name="libprov">
+			<attribute name="provider-id" value="jst.web.container.runtime"/>
+		</node>
+	</facet>
+</root>
