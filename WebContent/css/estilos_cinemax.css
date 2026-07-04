@@ -47,6 +47,7 @@
 html { scroll-behavior: smooth; }
 
 body {
+    margin: 0;
     background-color: var(--cinemax-dark);
     background-image:
         radial-gradient(1200px 600px at 12% -10%, rgba(47, 135, 99, 0.20), transparent 60%),
