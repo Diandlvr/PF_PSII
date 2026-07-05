@@ -1,10 +1,16 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="true" %>
-<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil, modelo.PasswordUtil" %>
+<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil, modelo.PasswordUtil, modelo.MembresiaDAO" %>
 <%
     String mensaje      = null;
     boolean noVerificado = false;
     boolean reenvioOk   = false;
     String  accion      = request.getParameter("accion") != null ? request.getParameter("accion") : "";
+
+    request.setCharacterEncoding("UTF-8");
+
+    // URL base real de la app para el enlace del correo de verificacion
+    String urlCompleta = request.getRequestURL().toString();
+    String baseUrl = urlCompleta.substring(0, urlCompleta.lastIndexOf('/'));
 
     if ("POST".equals(request.getMethod())) {
 
@@ -24,14 +30,15 @@
                         upd.setString(1, nuevoToken);
                         upd.setInt(2, rs.getInt("id"));
                         upd.executeUpdate();
-                        EmailUtil.enviarConfirmacion(email, rs.getString("nombre"), nuevoToken);
+                        EmailUtil.enviarConfirmacion(email, rs.getString("nombre"), nuevoToken, baseUrl);
                         reenvioOk = true;
                     } else {
                         // No revelamos si el correo existe o ya estaba verificado
                         reenvioOk = true;
                     }
                 } catch (Exception e) {
-                    mensaje = "No se pudo reenviar el correo: " + e.getMessage();
+                    System.err.println("login.jsp reenviar: " + e.getMessage());
+                    mensaje = "No se pudo reenviar el correo. Intenta de nuevo en unos minutos.";
                 }
             } else {
                 mensaje = "Ingresa un correo válido para reenviar la verificación.";
@@ -77,14 +84,21 @@
                             session.setAttribute("clienteId", cliId);
                             session.setAttribute("userEmail", email);
                             session.setAttribute("userName",  rs.getString("nombre"));
-                            response.sendRedirect("usuarios.jsp");
+
+                            // Primer login sin plan: elegir membresia antes de los perfiles
+                            if (MembresiaDAO.tieneMembresia(cliId)) {
+                                response.sendRedirect("usuarios.jsp");
+                            } else {
+                                response.sendRedirect("membresia.jsp");
+                            }
                             return;
                         }
                     } else {
                         mensaje = "Correo o contraseña incorrectos.";
                     }
                 } catch (Exception e) {
-                    mensaje = "Error: " + e.getMessage();
+                    System.err.println("login.jsp: " + e.getMessage());
+                    mensaje = "Ocurrió un error al iniciar sesión. Intenta de nuevo.";
                 }
             } else {
                 mensaje = "Datos inválidos. Verifica e inténtalo de nuevo.";

@@ -2,6 +2,7 @@ package modelo;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -25,6 +26,48 @@ public class MembresiaDAO {
 
         String normalizado = tipo.trim().toLowerCase();
         return normalizado.equals("regular") || normalizado.equals("premium");
+    }
+
+    /**
+     * true si el cliente ya tiene al menos una membresía registrada.
+     * En caso de error de BD devuelve true para no bloquear el login.
+     */
+    public static boolean tieneMembresia(int clienteId) {
+        String sql = "SELECT COUNT(*) FROM membresias WHERE cliente_id = ?";
+        try (Connection con = ConexionDB.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, clienteId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("MembresiaDAO.tieneMembresia() error: " + e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Registra la membresía Regular (gratuita, sin vencimiento) si el cliente
+     * aún no tiene ninguna. Idempotente: no duplica filas.
+     */
+    public static boolean registrarRegular(int clienteId) {
+        if (clienteId <= 0) {
+            return false;
+        }
+        if (tieneMembresia(clienteId)) {
+            return true;
+        }
+        String sql = "INSERT INTO membresias (cliente_id, tipo, fecha_inicio) "
+                   + "VALUES (?, 'regular', NOW())";
+        try (Connection con = ConexionDB.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, clienteId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("MembresiaDAO.registrarRegular() error: " + e.getMessage());
+            return false;
+        }
     }
 
     /**

@@ -37,13 +37,18 @@
             FavoritoDAO.remove(pAjax, Integer.parseInt(idStr));
             out.print("{\"ok\":true}");
         } catch (Exception e) {
-            out.print("{\"error\":\"" + e.getMessage().replace("\"","'") + "\"}");
+            System.err.println("favoritos.jsp quitar: " + e.getMessage());
+            out.print("{\"error\":\"No se pudo quitar el favorito\"}");
         }
         return;
     }
 
     // ── Validar perfil ────────────────────────────────────────────────
+    // Si no llega por URL, usamos el perfil activo de la sesion.
     String perfil = request.getParameter("perfil");
+    if (perfil == null || perfil.isEmpty()) {
+        perfil = (String) session.getAttribute("perfilKey");
+    }
     if (perfil == null || perfil.isEmpty()) {
         response.sendRedirect("usuarios.jsp");
         return;
@@ -90,10 +95,11 @@
     <div class="nav-links">
       <a href="repertorio.jsp?perfil=<%= perfilEnc %>">Inicio</a>
       <a href="favoritos.jsp?perfil=<%= perfilEnc %>" class="active">Mis Favoritos</a>
+      <a href="reporte_avance.jsp">Mi Avance</a>
       <a href="reporte_cuenta.jsp">Mi Cuenta</a>
     </div>
     <a href="usuarios.jsp" class="user-icon" title="Cambiar perfil">
-      <%= esc(perfilNombre).substring(0,1).toUpperCase() %>
+      <%= (perfilNombre == null || perfilNombre.isEmpty()) ? "?" : esc(perfilNombre.substring(0,1).toUpperCase()) %>
     </a>
   </nav>
 

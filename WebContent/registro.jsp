@@ -5,6 +5,12 @@
     boolean enviado  = false;
     String emailEnv  = "";
 
+    request.setCharacterEncoding("UTF-8");
+
+    // URL base real de la app (http://host:puerto/contexto) para el enlace del correo
+    String urlCompleta = request.getRequestURL().toString();
+    String baseUrl = urlCompleta.substring(0, urlCompleta.lastIndexOf('/'));
+
     if ("POST".equals(request.getMethod())) {
         String email  = request.getParameter("email")     != null ? request.getParameter("email").trim()     : "";
         String pass1  = request.getParameter("password")  != null ? request.getParameter("password").trim()  : "";
@@ -40,18 +46,21 @@
 
                     if (psIns.executeUpdate() > 0) {
                         try {
-                            EmailUtil.enviarConfirmacion(email, nombre, token);
+                            EmailUtil.enviarConfirmacion(email, nombre, token, baseUrl);
                             enviado = true;
                             emailEnv = email;
                         } catch (Exception mailEx) {
-                            mensaje = "Cuenta creada, pero no se pudo enviar el correo: " + mailEx.getMessage();
+                            System.err.println("registro.jsp correo: " + mailEx.getMessage());
+                            mensaje = "Tu cuenta fue creada, pero no se pudo enviar el correo de verificación. "
+                                    + "En la pantalla de inicio de sesión puedes pedir que se reenvíe.";
                         }
                     } else {
                         mensaje = "No se pudo registrar. Intenta de nuevo.";
                     }
                 }
             } catch (Exception e) {
-                mensaje = "Error en registro: " + e.getMessage();
+                System.err.println("registro.jsp: " + e.getMessage());
+                mensaje = "No se pudo completar el registro. Intenta de nuevo.";
             }
         }
     }
@@ -79,7 +88,7 @@
     /* Barra de fuerza */
     .strength-bar  { height: 4px; border-radius: 4px; background: #1a1a1a; margin-top: 7px; overflow: hidden; }
     .strength-fill { height: 100%; width: 0; border-radius: 4px; transition: width .35s, background .35s; }
-    .strength-lbl  { font-size: 11px; color: #555; margin-top: 4px; min-height: 16px; transition: color .35s; }
+    .strength-lbl  { font-size: 11px; color: #7e948b; margin-top: 4px; min-height: 16px; transition: color .35s; }
     /* Pantalla "correo enviado" */
     .sent-card {
       width: 100%; max-width: 460px; text-align: center;
@@ -95,7 +104,7 @@
       border: 1px solid rgba(46,204,113,.4); border-radius: 20px;
       padding: 5px 18px; font-size: 14px; margin: 10px 0 28px;
     }
-    .hint { font-size: 12px; color: #444; margin-top: 16px; }
+    .hint { font-size: 12px; color: #7e948b; margin-top: 16px; }
   </style>
 </head>
 <body class="register-body">

@@ -24,6 +24,7 @@
     // Persona 4 - Membresía
     // clienteId SIEMPRE debe venir de la sesion (post-login).
     // ------------------------------------------------------------
+    request.setCharacterEncoding("UTF-8");
     Integer clienteId = leerId(session.getAttribute("clienteId"));
 
     if (clienteId == null) {
@@ -36,14 +37,13 @@
     if ("POST".equalsIgnoreCase(request.getMethod())) {
         String tipo = request.getParameter("tipoMembresia");
 
-        if (clienteId == null) {
-            mensaje = "Debes iniciar sesión antes de elegir una membresía.";
-        } else if (!MembresiaDAO.seleccionar(tipo)) {
+        if (!MembresiaDAO.seleccionar(tipo)) {
             mensaje = "Tipo de membresía inválido.";
         } else {
             session.setAttribute("tipoMembresia", tipo);
 
             if ("regular".equalsIgnoreCase(tipo)) {
+                MembresiaDAO.registrarRegular(clienteId);
                 response.sendRedirect("usuarios.jsp");
                 return;
             }
@@ -62,9 +62,9 @@
     <title>Seleccionar Membresía - CinemaxPlus</title>
     <link rel="stylesheet" href="css/estilos_cinemax.css">
     <style>
+        /* Usa el fondo global de la marca (verde oscuro) definido en el CSS */
         body.membership-body {
             min-height: 100vh;
-            background: radial-gradient(circle at top, #2b2b2b 0%, #141414 50%, #000 100%);
             color: #fff;
         }
         .membership-container {
@@ -88,15 +88,16 @@
             margin-top: 30px;
         }
         .membership-card {
-            background: rgba(30, 30, 30, 0.95);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
             border-radius: 14px;
             padding: 30px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.45);
             text-align: left;
         }
         .membership-card.featured {
-            border: 2px solid #e50914;
+            border: 2px solid var(--brand);
+            box-shadow: 0 12px 35px var(--brand-glow);
             transform: scale(1.02);
         }
         .membership-name {
@@ -132,11 +133,6 @@
             margin: 20px auto;
             max-width: 620px;
         }
-        .test-links {
-            margin-top: 20px;
-            color: #b3b3b3;
-        }
-        .test-links a { color: white; }
     </style>
 </head>
 <body class="membership-body">
@@ -149,18 +145,7 @@
             <div class="alert"><%= esc(mensaje) %></div>
         <% } %>
 
-        <% if (clienteId == null) { %>
-            <div class="alert">
-                No hay cliente activo en sesión. Primero debe funcionar el login.<br>
-                Para probar esta pantalla temporalmente puedes abrir:
-                <strong>membresia.jsp?clienteId=1</strong>
-            </div>
-        <% } else { %>
-            <% if (modoPrueba) { %>
-                <p class="test-links">Modo prueba activo con clienteId: <strong><%= clienteId %></strong></p>
-            <% } %>
-
-            <div class="membership-options">
+        <div class="membership-options">
                 <div class="membership-card">
                     <h3 class="membership-name">Regular</h3>
                     <div class="membership-price">$0 <span>/mes</span></div>
@@ -191,7 +176,6 @@
                     </form>
                 </div>
             </div>
-        <% } %>
     </div>
 </body>
 </html>

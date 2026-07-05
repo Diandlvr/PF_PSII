@@ -38,13 +38,19 @@
             boolean esFav = FavoritoDAO.toggle(pAjax, Integer.parseInt(idStr));
             out.print("{\"favorito\":" + esFav + "}");
         } catch (Exception e) {
-            out.print("{\"error\":\"" + e.getMessage().replace("\"","'") + "\"}");
+            System.err.println("repertorio.jsp toggle: " + e.getMessage());
+            out.print("{\"error\":\"No se pudo actualizar el favorito\"}");
         }
         return;
     }
 
     // ── Validar perfil ────────────────────────────────────────────────────
+    // Si no llega por URL, usamos el perfil activo de la sesion (permite
+    // navegar entre paginas sin arrastrar ?perfil= en cada enlace).
     String perfil = request.getParameter("perfil");
+    if (perfil == null || perfil.isEmpty()) {
+        perfil = (String) session.getAttribute("perfilKey");
+    }
     if (perfil == null || perfil.isEmpty()) {
         response.sendRedirect("usuarios.jsp");
         return;
@@ -117,10 +123,11 @@
     <div class="nav-links">
       <a href="repertorio.jsp?perfil=<%= perfilEnc %>" class="active">Inicio</a>
       <a href="favoritos.jsp?perfil=<%= perfilEnc %>">Mis Favoritos</a>
+      <a href="reporte_avance.jsp">Mi Avance</a>
       <a href="reporte_cuenta.jsp">Mi Cuenta</a>
     </div>
     <a href="usuarios.jsp" class="user-icon" title="Cambiar perfil">
-      <%= esc(perfilNombre).substring(0,1).toUpperCase() %>
+      <%= (perfilNombre == null || perfilNombre.isEmpty()) ? "?" : esc(perfilNombre.substring(0,1).toUpperCase()) %>
     </a>
   </nav>
 
@@ -181,6 +188,7 @@
              onclick="window.open('https://www.youtube.com/results?search_query=<%= URLEncoder.encode(item.get("titulo"), "UTF-8") %>','_blank')">
           <button class="favorite-btn <%= esFav ? "favorito" : "" %>"
                   title="<%= esFav ? "Quitar de favoritos" : "Agregar a favoritos" %>"
+                  aria-label="<%= esFav ? "Quitar" : "Agregar" %> <%= esc(item.get("titulo")) %> <%= esFav ? "de" : "a" %> favoritos"
                   data-id="<%= itemId %>"
                   onclick="event.stopPropagation(); toggleFav(this, <%= itemId %>)">
             <%= esFav ? "&#9829;" : "&#9825;" %>

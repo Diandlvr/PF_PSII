@@ -28,24 +28,16 @@
     // ------------------------------------------------------------
     // Persona 4 - Reporte de cuenta
     // Junta datos de cliente + membresías + perfiles.
-    // En producción, clienteId viene del login.
-    // Para probar mientras login no esté listo: reporte_cuenta.jsp?clienteId=1
+    // clienteId SIEMPRE viene de la sesión (post-login).
     // ------------------------------------------------------------
     Integer clienteId = leerId(session.getAttribute("clienteId"));
-    boolean modoPrueba = false;
 
     if (clienteId == null) {
-        clienteId = leerId(request.getParameter("clienteId"));
-        if (clienteId != null) {
-            session.setAttribute("clienteId", clienteId);
-            modoPrueba = true;
-        }
+        response.sendRedirect("login.jsp");
+        return;
     }
 
-    CuentaReporte reporte = null;
-    if (clienteId != null) {
-        reporte = ReporteDAO.cuenta(clienteId);
-    }
+    CuentaReporte reporte = ReporteDAO.cuenta(clienteId);
 
     SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 %>
@@ -56,26 +48,6 @@
     <title>Reporte de Cuenta - CinemaxPlus</title>
     <link rel="stylesheet" href="css/estilos_cinemax.css">
     <style>
-        body.report-body {
-            min-height: 100vh;
-            background: #141414;
-            color: #fff;
-        }
-        .report-header {
-            padding: 22px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0,0,0,0.88);
-            border-bottom: 1px solid #222;
-        }
-        .report-header nav a {
-            color: #e5e5e5;
-            text-decoration: none;
-            margin-left: 18px;
-            font-size: 14px;
-        }
-        .report-header nav a:hover { color: #fff; }
         .report-container {
             max-width: 1100px;
             margin: 0 auto;
@@ -96,8 +68,8 @@
             margin-bottom: 30px;
         }
         .summary-card, .report-card {
-            background: #1f1f1f;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
             border-radius: 14px;
             padding: 22px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.28);
@@ -120,8 +92,8 @@
             font-weight: bold;
             font-size: 13px;
         }
-        .badge.premium { background: #e50914; color: white; }
-        .badge.regular { background: #555; color: white; }
+        .badge.premium { background: var(--brand-grad); color: #04130d; }
+        .badge.regular { background: var(--cinemax-gray-dark); color: var(--cinemax-gray-lighter); border: 1px solid var(--surface-border); }
         .badge.none { background: #333; color: #ddd; }
         .report-card { margin-bottom: 24px; }
         .report-card h2 { margin-bottom: 16px; }
@@ -153,45 +125,42 @@
             margin: 20px 0;
         }
         @media (max-width: 700px) {
-            .report-header { flex-direction: column; gap: 16px; }
-            .report-header nav a { margin: 0 8px; }
             table { font-size: 13px; }
         }
     </style>
 </head>
-<body class="report-body">
-    <header class="report-header">
-        <div class="cinemax-logo"></div>
-        <nav>
-            <a href="repertorio.jsp">Catálogo</a>
-            <a href="favoritos.jsp">Favoritos</a>
-            <a href="membresia.jsp">Membresía</a>
-            <a href="reporte_cuenta.jsp">Mi cuenta</a>
-            <a href="logout.jsp">Salir</a>
-        </nav>
-    </header>
+<body class="favorites-body">
+    <nav class="navbar">
+        <a href="repertorio.jsp" class="cinemax-logo" aria-label="CinemaxPlus"></a>
+        <div class="nav-links">
+            <a href="repertorio.jsp">Inicio</a>
+            <a href="favoritos.jsp">Mis Favoritos</a>
+            <a href="reporte_avance.jsp">Mi Avance</a>
+            <a href="reporte_cuenta.jsp" class="active">Mi Cuenta</a>
+            <a href="membresia.jsp">Membres&iacute;a</a>
+        </div>
+        <a href="logout.jsp" class="user-icon" title="Cerrar sesi&oacute;n">&#9099;</a>
+    </nav>
 
     <main class="report-container">
         <h1 class="report-title">Reporte de cuenta</h1>
         <p class="report-subtitle">Resumen del cliente, membresía activa e información de perfiles.</p>
 
-        <% if (clienteId == null) { %>
-            <div class="alert">
-                No hay cliente activo en sesión. Primero debe funcionar el login.<br>
-                Para probar temporalmente abre: <strong>reporte_cuenta.jsp?clienteId=1</strong>
-            </div>
-        <% } else if (reporte == null) { %>
-            <div class="alert">No se encontró información para el clienteId <%= clienteId %>.</div>
+        <% if (reporte == null) { %>
+            <div class="alert">No se encontró información de tu cuenta. Intenta iniciar sesión de nuevo.</div>
         <% } else { %>
-            <% if (modoPrueba) { %>
-                <p style="color:#b3b3b3; margin-bottom:16px;">Modo prueba activo con clienteId: <strong><%= clienteId %></strong></p>
-            <% } %>
-
             <%
                 MembresiaItem actual = reporte.getMembresiaActual();
                 String tipoActual = reporte.getTipoActual();
+
+                // Una membresía con fecha de vencimiento pasada no es "actual"
+                boolean vencida = actual != null && actual.getFechaVencimiento() != null
+                        && actual.getFechaVencimiento().before(new java.util.Date());
+
                 String claseBadge = "none";
-                if (actual != null && "premium".equalsIgnoreCase(actual.getTipo())) {
+                if (vencida) {
+                    tipoActual = actual.getTipo() + " (vencida)";
+                } else if (actual != null && "premium".equalsIgnoreCase(actual.getTipo())) {
                     claseBadge = "premium";
                 } else if (actual != null && "regular".equalsIgnoreCase(actual.getTipo())) {
                     claseBadge = "regular";
@@ -211,7 +180,7 @@
                         <span class="badge <%= claseBadge %>"><%= esc(tipoActual) %></span>
                     </div>
                     <% if (actual != null && actual.getFechaVencimiento() != null) { %>
-                        <p style="color:#b3b3b3; margin-top:8px;">Vence: <%= fmt.format(actual.getFechaVencimiento()) %></p>
+                        <p style="color:#b3b3b3; margin-top:8px;"><%= vencida ? "Venció" : "Vence" %>: <%= fmt.format(actual.getFechaVencimiento()) %></p>
                     <% } %>
                 </div>
 

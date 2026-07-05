@@ -11,4 +11,20 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
+    <!-- Autenticacion central: paginas privadas requieren sesion -->
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>modelo.AuthFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/usuarios.jsp</url-pattern>
+        <url-pattern>/repertorio.jsp</url-pattern>
+        <url-pattern>/favoritos.jsp</url-pattern>
+        <url-pattern>/membresia.jsp</url-pattern>
+        <url-pattern>/pago.jsp</url-pattern>
+        <url-pattern>/reporte_cuenta.jsp</url-pattern>
+        <url-pattern>/reporte_avance.jsp</url-pattern>
+    </filter-mapping>
+
 </web-app>

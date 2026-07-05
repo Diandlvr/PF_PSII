@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="true" %>
-<%@ page import="java.sql.*, java.util.*, modelo.ConexionDB" %>
+<%@ page import="java.sql.*, java.util.*, java.net.URLEncoder, modelo.ConexionDB" %>
 <%!
     // Devuelve la URL del avatar: el guardado en BD o uno estable por hash de la clave.
     String avatarDe(String avatar, String perfilKey, String[] avatares) {
@@ -7,8 +7,23 @@
         int idx = Math.abs(perfilKey.hashCode()) % avatares.length;
         return avatares[idx];
     }
+
+    // Escape HTML para prevenir XSS con datos escritos por el usuario.
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;").replace("'", "&#39;");
+    }
+
+    // Escape para incrustar un valor dentro de un string de JavaScript.
+    private String escJs(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"");
+    }
 %>
 <%
+    request.setCharacterEncoding("UTF-8");
+
     // Guardia de sesion: redirige a login si no hay cliente autenticado
     if (session.getAttribute("clienteId") == null) {
         response.sendRedirect("login.jsp");
@@ -26,17 +41,42 @@
         "img/avatars/spongebob.png"
     };
 
-    // Eliminar perfil (GET ?eliminar=perfilKey)
-    String eliminar = request.getParameter("eliminar");
-    if (eliminar != null && !eliminar.isEmpty()) {
-        try (Connection con = ConexionDB.getConexion()) {
-            PreparedStatement ps = con.prepareStatement(
-                "DELETE FROM usuarios WHERE perfil_key = ? AND cliente_id = ?");
-            ps.setString(1, eliminar);
-            ps.setInt(2, clienteId);
-            ps.executeUpdate();
-        } catch (Exception e) {
-            mensaje = "Error al eliminar: " + e.getMessage();
+    // Eliminar perfil (POST accion=eliminar; nunca por GET, es destructivo)
+    if ("POST".equals(request.getMethod())
+            && "eliminar".equals(request.getParameter("accion"))) {
+        String eliminar = request.getParameter("perfilKey");
+        if (eliminar != null && !eliminar.isEmpty()) {
+            try (Connection con = ConexionDB.getConexion()) {
+                PreparedStatement ps = con.prepareStatement(
+                    "DELETE FROM usuarios WHERE perfil_key = ? AND cliente_id = ?");
+                ps.setString(1, eliminar);
+                ps.setInt(2, clienteId);
+                int filas = ps.executeUpdate();
+
+                // Limpiar datos asociados solo si el perfil era de este cliente
+                if (filas > 0) {
+                    try (PreparedStatement pf = con.prepareStatement(
+                            "DELETE FROM favs WHERE usuario = ?")) {
+                        pf.setString(1, eliminar);
+                        pf.executeUpdate();
+                    }
+                    try (PreparedStatement pp = con.prepareStatement(
+                            "DELETE FROM progreso WHERE usuario = ?")) {
+                        pp.setString(1, eliminar);
+                        pp.executeUpdate();
+                    } catch (SQLException exProgreso) {
+                        // La tabla progreso puede no estar importada aun; no es fatal
+                        System.err.println("usuarios.jsp progreso: " + exProgreso.getMessage());
+                    }
+                    // Si se elimino el perfil activo, limpiarlo de la sesion
+                    if (eliminar.equals(session.getAttribute("perfilKey"))) {
+                        session.removeAttribute("perfilKey");
+                        session.removeAttribute("perfilNombre");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("usuarios.jsp eliminar: " + e.getMessage());
+            }
         }
         response.sendRedirect("usuarios.jsp");
         return;
@@ -79,7 +119,8 @@
                     return;
                 }
             } catch (Exception e) {
-                mensaje = "Error al crear perfil: " + e.getMessage();
+                System.err.println("usuarios.jsp crear: " + e.getMessage());
+                mensaje = "No se pudo crear el perfil. Intenta de nuevo.";
             }
         } else {
             mensaje = "El nombre no puede estar vacío.";
@@ -101,7 +142,8 @@
             perfiles.add(p);
         }
     } catch (Exception e) {
-        mensaje = "Error al cargar perfiles: " + e.getMessage();
+        System.err.println("usuarios.jsp cargar: " + e.getMessage());
+        mensaje = "No se pudieron cargar los perfiles. Recarga la página.";
     }
 %>
 <!DOCTYPE html>
@@ -144,13 +186,12 @@
             double delay   = i * 0.07;
       %>
         <div class="profile" style="animation-delay: <%= delay %>s"
-             onclick="location.href='repertorio.jsp?perfil=<%= pKey %>'">
-          <button class="delete-btn btn btn-outline" title="Eliminar perfil"
-                  onclick="event.stopPropagation();
-                           if(confirm('¿Eliminar este perfil?'))
-                             location.href='usuarios.jsp?eliminar=<%= pKey %>'">&#10060;</button>
-          <div class="profile-avatar" style="background-image:url('<%= pAvatar %>');"></div>
-          <div class="profile-name"><%= pNombre %></div>
+             onclick="location.href='repertorio.jsp?perfil=<%= URLEncoder.encode(pKey, "UTF-8") %>'">
+          <button class="delete-btn btn btn-outline" type="button"
+                  title="Eliminar perfil" aria-label="Eliminar perfil <%= esc(pNombre) %>"
+                  onclick="event.stopPropagation(); eliminarPerfil('<%= esc(escJs(pKey)) %>', '<%= esc(escJs(pNombre)) %>')">&#10060;</button>
+          <div class="profile-avatar" style="background-image:url('<%= esc(pAvatar) %>');"></div>
+          <div class="profile-name"><%= esc(pNombre) %></div>
         </div>
       <% i++; } %>
 
@@ -164,7 +205,7 @@
     <% if (mensaje != null) { %>
       <div class="error-message"
            style="display:block; text-align:center; max-width:420px; margin:24px auto 0;">
-        <strong><%= mensaje %></strong>
+        <strong><%= esc(mensaje) %></strong>
       </div>
     <% } %>
 
@@ -215,12 +256,29 @@
     </div>
   </div>
 
+  <!-- Formulario oculto: eliminar perfil por POST (nunca por GET) -->
+  <form id="deleteForm" method="post" action="usuarios.jsp" style="display:none;">
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="perfilKey" id="deleteKey">
+  </form>
+
   <script>
     const modal = document.getElementById('profileModal');
-    document.getElementById('addProfileBtn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('addProfileBtn').onclick = () => {
+      modal.style.display = 'flex';
+      const inp = modal.querySelector('input[name="nombre"]');
+      if (inp) inp.focus();
+    };
     document.getElementById('cancelBtn').onclick     = () => modal.style.display = 'none';
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.style.display = 'none'; });
+
+    function eliminarPerfil(perfilKey, nombre) {
+      if (confirm('¿Eliminar el perfil "' + nombre + '"? También se borrarán sus favoritos y su avance.')) {
+        document.getElementById('deleteKey').value = perfilKey;
+        document.getElementById('deleteForm').submit();
+      }
+    }
   </script>
 </body>
 </html>

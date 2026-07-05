@@ -28,8 +28,14 @@ public class EmailUtil {
         return cfg;
     }
 
-    public static void enviarConfirmacion(String destinatario, String nombre, String token)
-            throws Exception {
+    /**
+     * Envia el correo de confirmacion de cuenta.
+     *
+     * @param baseUrl URL base de la aplicacion, p. ej. http://localhost:8080/PF_PSII_JSP
+     *                (el JSP la obtiene del request para no depender del nombre del contexto).
+     */
+    public static void enviarConfirmacion(String destinatario, String nombre, String token,
+                                          String baseUrl) throws Exception {
 
         Properties cfg  = cargarConfig();
         String host     = cfg.getProperty("mail.host",  "smtp.gmail.com");
@@ -56,7 +62,13 @@ public class EmailUtil {
 
         Session mailSession = Session.getInstance(smtpProps);
 
-        String link = "http://localhost:8080/PF_PSII_JSP/verificar.jsp?token=" + token;
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            baseUrl = "http://localhost:8080";
+        }
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        String link = baseUrl + "/verificar.jsp?token=" + token;
 
         String cuerpoHtml =
             "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>" +

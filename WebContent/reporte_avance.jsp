@@ -10,34 +10,33 @@
         return s.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
-                .replace("\"", "&quot;");
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 %>
 <%
     // -------------------------------------------------------------------
     //  Modulo 3C - Reporte de avance (Persona 5)
     //
-    //  El avance es por PERFIL: leemos el perfilKey de la sesion.
-    //  Guard de sesion (Modulo 4C): sin perfil no hay reporte.
-    //
-    //  Mientras la opcion 2 (perfiles) no guarde perfilKey en sesion,
-    //  se permite ?perfil=1_carlos como MODO DE PRUEBA. Cuando el login
-    //  este listo, este JSP funciona solo con la sesion sin cambios.
+    //  El avance es por PERFIL: el perfilKey lo guarda repertorio.jsp
+    //  en la sesion al elegir perfil. Guard de sesion (Modulo 4C):
+    //  sin login -> login.jsp; sin perfil elegido -> usuarios.jsp.
     // -------------------------------------------------------------------
+    if (session.getAttribute("clienteId") == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
     String perfilKey = (String) session.getAttribute("perfilKey");
-    boolean modoPrueba = false;
     if (perfilKey == null || perfilKey.trim().isEmpty()) {
-        String pParam = request.getParameter("perfil");
-        if (pParam != null && !pParam.trim().isEmpty()) {
-            perfilKey = pParam.trim();
-            modoPrueba = true;
-        }
+        response.sendRedirect("usuarios.jsp");
+        return;
+    }
+    String perfilNombre = (String) session.getAttribute("perfilNombre");
+    if (perfilNombre == null || perfilNombre.trim().isEmpty()) {
+        perfilNombre = perfilKey;
     }
 
-    List<AvanceItem> avances = null;
-    if (perfilKey != null && !perfilKey.trim().isEmpty()) {
-        avances = ReporteDAO.avance(perfilKey);
-    }
+    List<AvanceItem> avances = ReporteDAO.avance(perfilKey);
 
     SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 %>
@@ -54,41 +53,24 @@
     <nav class="navbar">
         <a href="repertorio.jsp" class="cinemax-logo" aria-label="CinemaxPlus"></a>
         <div class="nav-links">
-            <a href="repertorio.jsp">Catalogo</a>
-            <a href="favoritos.jsp">Favoritos</a>
-            <a href="reporte_cuenta.jsp">Mi cuenta</a>
-            <a href="reporte_avance.jsp" class="active">Mi avance</a>
-            <a href="logout.jsp" class="user-icon" title="Cerrar sesion">&#9099;</a>
+            <a href="repertorio.jsp">Inicio</a>
+            <a href="favoritos.jsp">Mis Favoritos</a>
+            <a href="reporte_avance.jsp" class="active">Mi Avance</a>
+            <a href="reporte_cuenta.jsp">Mi Cuenta</a>
         </div>
+        <a href="usuarios.jsp" class="user-icon" title="Cambiar perfil">
+            <%= esc(perfilNombre.substring(0, 1).toUpperCase()) %>
+        </a>
     </nav>
 
     <main class="main-content" style="padding-top: 90px;">
         <section class="content-section">
             <h1 class="section-title">Mi avance de reproduccion</h1>
             <p style="color: var(--cinemax-gray-light); margin: 8px 0 4px 16px;">
-                <% if (perfilKey != null && !perfilKey.trim().isEmpty()) { %>
-                    Perfil: <strong style="color:#fff;"><%= esc(perfilKey) %></strong>
-                    <% if (modoPrueba) { %>
-                        <span style="color:#e0b04a; font-size:0.85rem;">(modo prueba)</span>
-                    <% } %>
-                <% } %>
+                Perfil: <strong style="color:#fff;"><%= esc(perfilNombre) %></strong>
             </p>
 
-            <% if (perfilKey == null || perfilKey.trim().isEmpty()) { %>
-                <%-- Sin perfil en sesion: cuando exista el login esto redirige a login.jsp.
-                     Por ahora mostramos un aviso testeable. --%>
-                <div class="avance-empty">
-                    <p>No hay un perfil activo en la sesion.</p>
-                    <p style="margin-top:10px;">Para probar el reporte mientras el login no esta listo,
-                       abre la pagina con un perfil de ejemplo:</p>
-                    <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-                        <a class="btn btn-secondary" href="reporte_avance.jsp?perfil=1_carlos">1_carlos</a>
-                        <a class="btn btn-secondary" href="reporte_avance.jsp?perfil=1_jamir">1_jamir</a>
-                        <a class="btn btn-secondary" href="reporte_avance.jsp?perfil=4_juan">4_juan</a>
-                    </div>
-                </div>
-
-            <% } else if (avances == null || avances.isEmpty()) { %>
+            <% if (avances == null || avances.isEmpty()) { %>
                 <div class="avance-empty">
                     <p>Este perfil todavia no ha comenzado a ver ninguna pelicula.</p>
                     <a class="btn btn-primary" href="repertorio.jsp" style="margin-top:18px;">Ir al catalogo</a>

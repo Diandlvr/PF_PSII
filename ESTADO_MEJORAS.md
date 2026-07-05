@@ -2,64 +2,64 @@
 
 > Auditoría hecha revisando TODO el código (11 JSP, 7 clases Java, CSS, SQL).
 > Actualizar este archivo al completar cada punto para retomar en cualquier sesión.
-> Última actualización: 2026-07-04
+> Última actualización: 2026-07-04 — **sesión de correcciones aplicada** (ver resumen al final).
 
-## Qué ya funciona (no tocar sin razón)
+## Qué ya funciona
 
-- Login con hash SHA-256 + salt, migración automática de cuentas legacy en texto plano (`PasswordUtil`, `login.jsp`).
-- Registro con verificación por correo (token UUID, `EmailUtil`, `verificar.jsp`, reenvío de correo).
-- Perfiles por cliente (`usuarios.jsp`) con avatares y modal.
-- Repertorio con hero, filtro por género, carruseles y favoritos AJAX (valida que el perfil pertenezca al cliente — bien hecho).
-- Favoritos por perfil (`favoritos.jsp` + `FavoritoDAO`).
-- Membresía/pago simulado (Persona 4) y reportes de cuenta y avance (Personas 4 y 5).
-- `repertorio.jsp` y `favoritos.jsp` ya guardan `perfilKey` en sesión → el pendiente de "Persona 2" del GUIA_PERSONA5 **ya está resuelto**.
+- Login con hash SHA-256 + salt, migración automática de cuentas legacy en texto plano.
+- Registro con verificación por correo (token UUID, reenvío incluido).
+- Perfiles por cliente con avatares; repertorio con favoritos AJAX; reportes de cuenta y avance.
+- `repertorio.jsp`/`favoritos.jsp` guardan `perfilKey` en sesión → el pendiente de "Persona 2" está resuelto.
+- Flujo de membresía conectado: primer login sin plan → membresía → (pago si Premium) → perfiles.
 
 ---
 
-## 🔴 CRÍTICOS (rompen funcionalidad o seguridad — arreglar primero)
+## 🔴 CRÍTICOS
 
-- [ ] **1. `membresia.jsp` NO COMPILA.** Línea 159 usa `modoPrueba` que nunca se declara → error 500 al abrir la página. Eliminar ese bloque `<% if (modoPrueba) ... %>` (y de paso el bloque muerto `if (clienteId == null)` de la línea 152, inalcanzable porque arriba ya se redirige a login).
-- [ ] **2. Bypass de login por "modo prueba".** `reporte_cuenta.jsp?clienteId=1` y `pago.jsp?clienteId=1` ESCRIBEN `clienteId` en la sesión sin contraseña → cualquiera se convierte en cualquier cliente. El login ya funciona: quitar ambos modos prueba y redirigir a `login.jsp` si no hay sesión.
-- [ ] **3. Enlace de verificación hardcodeado.** `EmailUtil.java:59` arma `http://localhost:8080/PF_PSII_JSP/verificar.jsp`. Hoy coincide con el nombre Eclipse (`PF_PSII_JSP`), pero las guías/equipo usan `CinemaxPlus` — si alguien despliega con otro nombre, ningún correo de verificación funciona. Pasar la URL base desde el JSP: `EmailUtil.enviarConfirmacion(email, nombre, token, baseUrl)` con `baseUrl = request.getRequestURL()` recortado + `request.getContextPath()`.
-- [ ] **4. Credenciales reales dentro del repo (¡antes del primer commit!).**
-  - `src/mail.properties` y `WebContent/WEB-INF/classes/mail.properties` contienen un App Password real de Gmail.
-  - `database_mariadb.sql` línea 32 tiene contraseñas reales en texto plano (cliente 4).
-  - Acción: crear `.gitignore` (mail.properties, `build/`), agregar `mail.properties.example` (el que `EmailUtil` ya menciona pero no existe), **rotar el App Password** en Gmail, y cambiar las contraseñas de prueba del SQL por dummies.
+- [x] **1. `membresia.jsp` no compilaba** (`modoPrueba` sin declarar + bloque muerto). Corregido.
+- [x] **2. Bypass de login por "modo prueba".** Eliminado de `reporte_cuenta.jsp` y `pago.jsp`; ahora redirigen a `login.jsp` sin sesión.
+- [x] **3. Enlace de verificación hardcodeado.** `EmailUtil.enviarConfirmacion()` ahora recibe la URL base real desde el request (login y registro actualizados).
+- [x] **4. Credenciales en el repo.** `.gitignore` creado, ambos `mail.properties` fuera del tracking, `mail.properties.example` agregado, contraseña real reemplazada por dummy en `database_mariadb.sql`. Commit hecho.
+  - [ ] ⚠️ **PENDIENTE DEL USUARIO: rotar el App Password de Gmail** — el viejo quedó en el historial de GitHub (commit "cambios"). Crear uno nuevo en https://myaccount.google.com/apppasswords y actualizar el `mail.properties` local (que ya no se sube).
 
-## 🟠 FUNCIONALES / QA (bugs que un usuario normal puede disparar)
+## 🟠 FUNCIONALES / QA
 
-- [ ] **5. XSS almacenado en `usuarios.jsp`.** El nombre del perfil se imprime sin escapar (`<%= pNombre %>`) y se inyecta en `onclick="...'<%= pKey %>'..."`. Un perfil llamado `<script>...` ejecuta JS. Usar el mismo `esc()` que ya existe en otras páginas + escapar en atributos JS.
-- [ ] **6. `e.getMessage()` mostrado al usuario** en login, registro, usuarios y en los JSON de AJAX (repertorio/favoritos). Filtra detalles internos (SQL, rutas). Mostrar mensaje genérico y loguear el detalle en servidor.
-- [ ] **7. Falta `request.setCharacterEncoding("UTF-8")`** antes de leer POST en `login.jsp`, `registro.jsp`, `usuarios.jsp`, `membresia.jsp`, `pago.jsp` (repertorio y favoritos sí lo hacen). Síntoma: nombres con ñ/acentos se guardan corruptos.
-- [ ] **8. Eliminar perfil por GET sin protección.** `usuarios.jsp?eliminar=KEY` borra con un solo clic de un enlace (sin CSRF, cacheable/prefetch). Cambiar a POST con formulario. Además deja huérfanos en `favs` y `progreso`: borrar también esas filas.
-- [ ] **9. Membresía vencida aparece como activa.** `ReporteDAO.getMembresiaActual()` toma la más reciente sin comparar `fecha_vencimiento` con hoy. El badge "premium" se muestra aunque venció. Validar vigencia (y decidir qué pasa al vencer).
-- [ ] **10. Sin autenticación central.** Cada JSP repite el guard a mano y `reporte_avance.jsp` no exige sesión (solo muestra aviso). Ideal: un `Filter` en `web.xml` que proteja todo menos login/registro/verificar/css/img.
-- [ ] **11. Crash potencial en navbar.** `repertorio.jsp:123` y `favoritos.jsp:96` hacen `.substring(0,1)` sobre el nombre del perfil → excepción si quedara vacío en BD. Proteger con un default ("?").
-- [ ] **12. `pago.jsp` no valida la expiración.** Acepta `99/99` o vacío de formato; solo tarjeta y CVV se validan. Validar patrón MM/AA y que no esté vencida (es simulado, pero es lo que evaluaría un QA).
+- [x] **5. XSS almacenado en `usuarios.jsp`.** Nombre de perfil y perfil_key ahora escapados (esc + escJs + URLEncoder).
+- [x] **6. `e.getMessage()` al usuario.** Reemplazado por mensajes genéricos + `System.err` en login, registro, usuarios y AJAX de repertorio/favoritos.
+- [x] **7. `setCharacterEncoding("UTF-8")`** agregado en login, registro, usuarios, membresía y pago.
+- [x] **8. Eliminar perfil ahora es POST** (formulario oculto + confirmación) y borra también sus `favs` y `progreso`; limpia el perfil de la sesión si era el activo.
+- [x] **9. Membresía vencida** ya no aparece como activa: `reporte_cuenta.jsp` muestra "(vencida)" y "Venció:" cuando corresponde.
+- [x] **10. Filtro de autenticación central.** `modelo.AuthFilter` + mapeo en `web.xml` para las 7 páginas privadas.
+- [x] **11. Crash de `substring`** protegido en repertorio y favoritos.
+- [x] **12. `pago.jsp` valida expiración** (formato MM/AA y tarjeta no vencida).
 
-## 🟡 UI/UX (revisión como diseñador)
+## 🟡 UI/UX
 
-- [ ] **13. Navegación rota entre secciones.** `reporte_avance.jsp` enlaza a `repertorio.jsp`/`favoritos.jsp` SIN `?perfil=` → repertorio rebota a la pantalla de perfiles y se pierde el contexto. A la inversa, repertorio/favoritos NO tienen enlace a "Mi avance". Arreglo: como `perfilKey` ya vive en la sesión, hacer que repertorio/favoritos la usen como fallback cuando no llegue el parámetro, y unificar los enlaces del navbar en las 4 páginas internas.
-- [ ] **14. Tres navbars distintos.** `navbar` (repertorio/favoritos/avance) vs `report-header` (reporte_cuenta) con estilos propios embebidos. Unificar en un solo navbar (idealmente un include `navbar.jspf`).
-- [ ] **15. Dos identidades visuales.** Login/registro/perfiles/repertorio usan la marca verde (#2ecc71, fondos verdosos); membresía/pago/reporte_cuenta usan rojo Netflix (#e50914) y fondo gris — se sienten de otra app. Migrar las páginas de Persona 4 a las variables del CSS global (`--brand`, `--surface`...).
-- [ ] **16. `index.jsp` es una página de diagnóstico** ("Fase 0 - Migración... conexión BD OK") y es el welcome-file. Para la entrega: landing real con botones "Iniciar sesión / Registrarse" (el CSS `landing-*` ya existe) o redirect a login.
-- [ ] **17. La membresía está huérfana en el flujo.** Tras registro/login nunca se ofrece elegir plan; `membresia.jsp` solo es alcanzable desde el header de reporte_cuenta. Propuesta: tras el primer login (cliente sin membresía) pasar por membresía antes de perfiles, o al menos enlazarla en el navbar.
-- [ ] **18. Modo prueba visible en `reporte_avance.jsp`.** Los botones "1_carlos / 1_jamir / 4_juan" y el parámetro `?perfil=` deben quitarse para la entrega (la sesión ya funciona). Sin perfil → redirigir a `usuarios.jsp`.
-- [ ] **19. Accesibilidad.** Botones de favorito solo-ícono sin `aria-label`; modal de perfil sin foco inicial ni focus-trap; `confirm()` nativo para eliminar perfil (inconsistente con el diseño); contrastes bajos (#555/#444 sobre negro); inputs de pago sin `inputmode="numeric"`, `pattern` ni `autocomplete="cc-number"`.
-- [ ] **20. Detalles de formulario de pago.** Sin auto-formato "1234 5678..." al escribir, CVV acepta letras hasta el submit, sin resumen del plan que se está pagando ($9.99 Premium aparece solo en el botón).
+- [x] **13. Navegación.** Repertorio y favoritos aceptan el perfil desde la sesión (ya no se pierde al navegar); enlace "Mi Avance" agregado a los navbars.
+- [x] **14. Navbar unificado.** `reporte_cuenta.jsp` y `reporte_avance.jsp` usan el mismo `.navbar` que repertorio/favoritos.
+- [x] **15. Paleta unificada.** Membresía, pago y reporte de cuenta migrados del rojo Netflix a las variables verdes de la marca (`--brand`, `--surface`...).
+- [x] **16. `index.jsp` es una landing real** (logo, claim, botones Registrarse/Iniciar sesión; redirige a perfiles si ya hay sesión).
+- [x] **17. Membresía integrada al flujo.** Primer login sin plan → `membresia.jsp`; elegir Regular registra la membresía gratuita (`MembresiaDAO.registrarRegular`); enlace en navbar de Mi Cuenta.
+- [x] **18. Modo prueba de `reporte_avance.jsp` eliminado.** Guard real: sin login → login.jsp, sin perfil → usuarios.jsp.
+- [x] **19. Accesibilidad (parcial).** aria-labels en botones de favorito y eliminar perfil, foco inicial en el modal, `inputmode/pattern/autocomplete` en pago, contrastes #444/#555 subidos a #7e948b.
+  - [ ] Pendiente menor: reemplazar `confirm()` nativo por modal propio; focus-trap completo en el modal.
+- [x] **20. Formulario de pago.** Auto-formato de tarjeta (grupos de 4), barra automática en MM/AA, CVV solo dígitos, resumen del plan Premium $9.99 antes del formulario.
 
-## 🧹 Deuda técnica (si queda tiempo)
+## 🧹 Deuda técnica
 
-- [ ] **21.** `esc()` y `leerId()` copiados en 6 JSPs → mover a una clase `modelo.WebUtil` estática.
-- [ ] **22.** El `esc()` de `reporte_avance.jsp` no escapa comillas simples (los demás sí) — unificar (se resuelve con el punto 21).
-- [ ] **23.** Repo sin commits: hacer commit inicial **después** del punto 4 (.gitignore + secretos fuera).
-- [ ] **24.** Tablas MyISAM sin FKs (huérfanos posibles en favs/progreso/usuarios/membresias). Migrar a InnoDB + FK es opcional para el curso; documentarlo como limitación.
+- [ ] **21.** `esc()`/`leerId()` duplicados en varios JSP → mover a una clase `modelo.WebUtil` (opcional).
+- [x] **22.** El `esc()` de `reporte_avance.jsp` ahora escapa comillas simples como los demás.
+- [x] **23.** Repos: el trabajo pendiente + seguridad quedó commiteado en el repo real `PF_PSII` (remoto github.com/Diandlvr/PF_PSII). Ojo: hay un repo git "envoltorio" sin commits en la carpeta padre `PFPSII/` que solo confunde; se puede borrar su `.git` cuando quieran.
+- [ ] **24.** Tablas MyISAM sin FKs — limitación documentada, migrar a InnoDB es opcional para el curso.
 
-## Orden recomendado de trabajo
+---
 
-1. Punto 4 (secretos) → commit inicial inmediato.
-2. Puntos 1 y 2 (membresía compila, quitar bypass) — son los que un profesor encuentra en 2 minutos.
-3. Punto 3 (link de verificación) + probar registro→correo→verificar→login completo.
-4. Puntos 13, 18, 16 (navegación + limpiar modos prueba + landing) — mayor impacto visible.
-5. Puntos 5–8 (XSS, encoding, mensajes de error, eliminar por POST).
-6. Resto de UI/UX (14, 15, 17, 19, 20) y deuda técnica.
+## Resumen de la sesión 2026-07-04
+
+Se aplicaron los puntos 1–20 y 22 (todo salvo lo marcado pendiente). Los `.java` compilan
+contra servlet-api de Tomcat (`javac` OK). **Falta probar en Tomcat**: flujo completo
+registro → correo → verificar → login → membresía → perfiles → repertorio → favoritos →
+avance → cuenta → pago Premium. Recordar en Eclipse: refrescar el proyecto (F5) y
+Clean + Start del servidor para que compile `AuthFilter` y los JSP nuevos.
+
+**Acción manual pendiente del usuario:** rotar el App Password de Gmail (punto 4).
