@@ -29,7 +29,7 @@ CREATE TABLE `cliente` (
 
 LOCK TABLES `cliente` WRITE;
 /*!40000 ALTER TABLE `cliente` DISABLE KEYS */;
-INSERT INTO `cliente` VALUES (1,'carlos@gmail.com','123456','Carlos Contreras','2025-12-15 04:04:59'),(2,'diego@gmail.com','123456','Diego','2025-12-15 19:00:17'),(3,'admin@test.com','123456','admin','2025-12-15 19:29:23'),(4,'juanxp8879@gmail.com','Dante5516!','Juan Pitti','2026-06-22 15:16:32');
+INSERT INTO `cliente` VALUES (1,'carlos@gmail.com','123456','Carlos Contreras','2025-12-15 04:04:59'),(2,'diego@gmail.com','123456','Diego','2025-12-15 19:00:17'),(3,'admin@test.com','123456','admin','2025-12-15 19:29:23'),(4,'juanxp8879@gmail.com','123456','Juan Pitti','2026-06-22 15:16:32');
 /*!40000 ALTER TABLE `cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 DROP TABLE IF EXISTS `contenido`;

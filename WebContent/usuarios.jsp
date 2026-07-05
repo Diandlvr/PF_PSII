@@ -23,14 +23,7 @@
         "img/avatars/gumball.png",
         "img/avatars/kanyebear.jpg",
         "img/avatars/shrek.png",
-        "img/avatars/spongebob.png",
-        "img/avatars/pikachu.png",
-        "img/avatars/charmander.png",
-        "img/avatars/mewtwo.png",
-        "img/avatars/gengar.png",
-        "img/avatars/bulbasaur.png",
-        "img/avatars/rick.png",
-        "img/avatars/morty.png"
+        "img/avatars/spongebob.png"
     };
 
     // Eliminar perfil (GET ?eliminar=perfilKey)

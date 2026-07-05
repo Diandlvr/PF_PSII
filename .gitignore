@@ -1,0 +1,10 @@
+# Credenciales SMTP reales (usar src/mail.properties.example como plantilla)
+src/mail.properties
+WebContent/WEB-INF/classes/mail.properties
+
+# Salida de compilación de Eclipse
+build/
+
+# Archivos de sistema
+Thumbs.db
+.DS_Store

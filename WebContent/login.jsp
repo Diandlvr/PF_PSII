@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="true" %>
-<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil" %>
+<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil, modelo.PasswordUtil" %>
 <%
     String mensaje      = null;
     boolean noVerificado = false;
@@ -45,16 +45,36 @@
             if (email.contains("@") && password.length() >= 6) {
                 try (Connection con = ConexionDB.getConexion()) {
                     PreparedStatement ps = con.prepareStatement(
-                        "SELECT id, nombre, verificado FROM cliente WHERE correo = ? AND contrasena = ?");
+                        "SELECT id, nombre, verificado, contrasena, password_salt"
+                      + " FROM cliente WHERE correo = ?");
                     ps.setString(1, email);
-                    ps.setString(2, password);
                     ResultSet rs = ps.executeQuery();
                     if (rs.next()) {
-                        if (rs.getInt("verificado") == 0) {
+                        String storedPass = rs.getString("contrasena");
+                        String storedSalt = rs.getString("password_salt");
+
+                        if (!PasswordUtil.verificar(password, storedPass, storedSalt)) {
+                            mensaje = "Correo o contraseña incorrectos.";
+                        } else if (rs.getInt("verificado") == 0) {
                             noVerificado = true;
                             mensaje = "Debes confirmar tu correo antes de iniciar sesión.";
                         } else {
-                            session.setAttribute("clienteId", rs.getInt("id"));
+                            int cliId = rs.getInt("id");
+
+                            // Auto-migracion: si la cuenta esta en texto plano, la re-hasheamos
+                            if (PasswordUtil.esLegacy(storedSalt)) {
+                                String nuevoSalt = PasswordUtil.generarSalt();
+                                String nuevoHash = PasswordUtil.hash(password, nuevoSalt);
+                                try (PreparedStatement upd = con.prepareStatement(
+                                        "UPDATE cliente SET contrasena = ?, password_salt = ? WHERE id = ?")) {
+                                    upd.setString(1, nuevoHash);
+                                    upd.setString(2, nuevoSalt);
+                                    upd.setInt(3, cliId);
+                                    upd.executeUpdate();
+                                }
+                            }
+
+                            session.setAttribute("clienteId", cliId);
                             session.setAttribute("userEmail", email);
                             session.setAttribute("userName",  rs.getString("nombre"));
                             response.sendRedirect("usuarios.jsp");

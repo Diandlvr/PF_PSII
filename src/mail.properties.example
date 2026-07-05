@@ -1,0 +1,9 @@
+# Plantilla de configuracion SMTP para EmailUtil.
+# Copia este archivo como src/mail.properties y rellena tus datos reales.
+# Para Gmail: crea un "App Password" en https://myaccount.google.com/apppasswords
+# NUNCA subas mail.properties al repositorio (esta en .gitignore).
+mail.host=smtp.gmail.com
+mail.port=587
+mail.user=tu_correo@gmail.com
+mail.pass=tu_app_password_de_16_letras
+mail.from=tu_correo@gmail.com

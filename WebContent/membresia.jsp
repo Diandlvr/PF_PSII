@@ -22,21 +22,13 @@
 <%
     // ------------------------------------------------------------
     // Persona 4 - Membresía
-    // En producción, clienteId viene del login.
-    // Para probar mientras login no esté listo: membresia.jsp?clienteId=1
+    // clienteId SIEMPRE debe venir de la sesion (post-login).
     // ------------------------------------------------------------
     Integer clienteId = leerId(session.getAttribute("clienteId"));
-    boolean modoPrueba = false;
 
     if (clienteId == null) {
-        clienteId = leerId(request.getParameter("clienteId"));
-        if (clienteId != null) {
-            session.setAttribute("clienteId", clienteId);
-            if (session.getAttribute("userName") == null) {
-                session.setAttribute("userName", "Usuario demo");
-            }
-            modoPrueba = true;
-        }
+        response.sendRedirect("login.jsp");
+        return;
     }
 
     String mensaje = null;

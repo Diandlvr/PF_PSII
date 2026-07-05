@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="true" %>
-<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil" %>
+<%@ page import="java.sql.*, java.util.UUID, modelo.ConexionDB, modelo.EmailUtil, modelo.PasswordUtil" %>
 <%
     String mensaje   = null;
     boolean enviado  = false;
@@ -26,14 +26,17 @@
                     mensaje = "El correo ya está registrado.";
                 } else {
                     String token = UUID.randomUUID().toString();
+                    String salt  = PasswordUtil.generarSalt();
+                    String hash  = PasswordUtil.hash(pass1, salt);
                     PreparedStatement psIns = con.prepareStatement(
-                        "INSERT INTO cliente (correo, contrasena, nombre, verificado, token_verificacion) " +
-                        "VALUES (?, ?, ?, 0, ?)",
+                        "INSERT INTO cliente (correo, contrasena, password_salt, nombre, verificado, token_verificacion) " +
+                        "VALUES (?, ?, ?, ?, 0, ?)",
                         PreparedStatement.RETURN_GENERATED_KEYS);
                     psIns.setString(1, email);
-                    psIns.setString(2, pass1);
-                    psIns.setString(3, nombre);
-                    psIns.setString(4, token);
+                    psIns.setString(2, hash);
+                    psIns.setString(3, salt);
+                    psIns.setString(4, nombre);
+                    psIns.setString(5, token);
 
                     if (psIns.executeUpdate() > 0) {
                         try {
