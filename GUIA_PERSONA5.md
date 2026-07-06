@@ -3,44 +3,62 @@
 Guía para dejar funcionando la tabla `progreso` y el reporte de avance
 (`reporte_avance.jsp`). Sirve como pasos a seguir **y** como evidencia de entrega.
 
-> **Requisito previo:** la Fase 0 ya debe estar hecha (XAMPP + Tomcat 9 corriendo,
-> base `cinemax_plus` importada desde `database_mariadb.sql`, Connector/J en su sitio).
+> **Entorno real de esta máquina:** NO se usa XAMPP. Está instalado **MySQL Server 8.0**
+> como servicio de Windows (`MySQL80`) en el puerto 3306, y el root quedó **sin
+> contraseña** (`ALTER USER 'root'@'localhost' IDENTIFIED BY ''`), que es justo lo que
+> asume `ConexionDB.java`. Por eso no hubo que tocar `ConexionDB`. Connector/J ya está
+> en `WEB-INF/lib`.
+
+> ✅ **En esta máquina la BD ya está importada y verificada** (6 tablas, `progreso`
+> con 9 filas, columnas de login en `cliente`, 4 clientes verificados). Los Pasos 1–2
+> solo hacen falta si se reinstala o se prueba en otro equipo.
 
 ---
 
-## Paso 1 — Arrancar XAMPP
+## Paso 1 — Verificar que MySQL 8.0 está corriendo
 
-1. Abre el **Panel de Control de XAMPP**.
-2. Pulsa **Start** en **Apache** y en **MySQL**.
-3. Ambos deben quedar en verde. Si MySQL no arranca, cierra otros MySQL/servicios
-   que usen el puerto 3306.
+1. El servicio **`MySQL80`** arranca solo con Windows. Para comprobarlo:
+   `services.msc` → busca *MySQL80* → estado **En ejecución**.
+2. Recuerda: root usa **contraseña vacía**. Si algún día le pones contraseña,
+   habrá que reflejarla en `ConexionDB.java` (o en un `db.properties`).
 
 ---
 
-## Paso 2 — Importar `progreso.sql` en phpMyAdmin
+## Paso 2 — Importar la base de datos (3 scripts, EN ORDEN)
 
-Esto crea la tabla `progreso` con datos de prueba reales.
+> ⚠️ El proyecto creció: ya no basta con `progreso.sql`. Hay que importar **tres**
+> scripts **en este orden**. Si te saltas el 3, el login falla por columnas
+> faltantes (`verificado`, `password_salt`).
 
-1. En el navegador abre: **http://localhost/phpmyadmin**
-2. En la columna izquierda, haz clic en la base de datos **`cinemax_plus`**
-   (importante: primero selecciónala, si no la tabla se crea en la BD equivocada).
-3. Arriba, pestaña **SQL**.
-4. Abre el archivo `progreso.sql` del proyecto, copia **todo** su contenido y pégalo
-   en el cuadro de texto.
-5. Botón **Continuar** (abajo a la derecha).
-6. Debe salir el mensaje verde de que se ejecutaron las consultas.
+| Orden | Archivo | Qué hace |
+|-------|---------|----------|
+| 1º | `database_mariadb.sql` | Crea la BD y las 5 tablas base con datos. |
+| 2º | `progreso.sql` | Crea la tabla `progreso` (avance) con datos de prueba. |
+| 3º | `migration_fixes.sql` | Agrega columnas de verificación por correo y hashing. |
 
-**Alternativa (pestaña Importar):** con `cinemax_plus` seleccionada → pestaña
-**Importar** → **Seleccionar archivo** → elige `progreso.sql` → **Continuar**.
+**Importar desde la línea de comandos** (PowerShell o CMD), en orden. La ruta del
+cliente en esta máquina es `C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe`:
+
+```powershell
+cd "C:\Users\quint\OneDrive\Desktop\Nueva carpeta\PF_PSII"
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot < database_mariadb.sql
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot < progreso.sql
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot < migration_fixes.sql
+```
+
+(Como root no tiene contraseña, no se pasa `-p`.) También sirve **MySQL Workbench**:
+abre cada `.sql` y ejecútalo con el rayo ⚡, en el mismo orden.
 
 ### Verificación rápida
-En la izquierda debe aparecer la tabla **`progreso`**. Haz clic en ella → pestaña
-**Examinar**: deben verse **9 filas** (perfiles `1_carlos`, `1_jamir`, `4_juan`,
-`3_admin`).
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot cinemax_plus -e "SELECT COUNT(*) FROM progreso; SHOW COLUMNS FROM cliente LIKE 'password_salt';"
+```
+Debe devolver **9** (filas de `progreso`) y la fila de la columna `password_salt`.
 
-> Si sale `ERROR 1273 Unknown collation`: no debería, `progreso.sql` ya usa
-> `utf8mb4_general_ci` (compatible con MariaDB/XAMPP). Si aparece, avisa al equipo
-> porque significa que la BD base se importó con otra collation.
+> ⚠️ Ojo con `migration_fixes.sql`: MySQL 8.0 **no** soporta `ADD COLUMN IF NOT EXISTS`
+> (eso es de MariaDB). El script ya fue reescrito para MySQL 8.0 (comprueba
+> `information_schema`) y es seguro re-ejecutarlo. No hace falta el arreglo de
+> collation `utf8mb4_0900` porque MySQL 8.0 sí soporta `utf8mb4_general_ci`.
 
 ---
 
@@ -58,52 +76,51 @@ En la izquierda debe aparecer la tabla **`progreso`**. Haz clic en ella → pest
 
 ---
 
-## Paso 4 — Probar el reporte de avance
+## Paso 4 — Prueba final del flujo (5A)
 
-Como el login/perfiles todavía no guardan el perfil en sesión, la página tiene un
-**modo prueba** por URL. Abre en el navegador:
+El login ya es obligatorio (el modo `?perfil=` se eliminó). Se prueba con el flujo real.
 
-```
-http://localhost:8080/CinemaxPlus/reporte_avance.jsp?perfil=1_carlos
-```
+1. Abre **http://localhost:8080/CinemaxPlus/**
+2. **Iniciar sesión** con un cliente de prueba:
+   - correo `carlos@gmail.com` · contraseña `123456`
+3. Elige el perfil **Carlos** (`1_carlos`) en la pantalla de perfiles.
+4. En el navbar entra a **Mi Avance**.
 
-Deberías ver, para el perfil `1_carlos`:
+Deberías ver, para `1_carlos`:
 
-| Película          | Avance esperado |
-|-------------------|-----------------|
-| The Dark Knight   | 100% (Terminada) |
-| Mad Max: Fury Road| 75% |
-| Forrest Gump      | ~28% |
-| Top Gun: Maverick | 0% |
+| Película           | Avance esperado |
+|--------------------|-----------------|
+| The Dark Knight    | 100% (Terminada) |
+| Mad Max: Fury Road | 75% |
+| Forrest Gump       | ~28% |
+| Top Gun: Maverick  | 0% |
 
-Prueba también otros perfiles cambiando el parámetro:
+Arriba, las 3 tarjetas resumen: **4 en curso · 1 terminada · ~51% promedio**.
 
-```
-http://localhost:8080/CinemaxPlus/reporte_avance.jsp?perfil=1_jamir
-http://localhost:8080/CinemaxPlus/reporte_avance.jsp?perfil=4_juan
-```
+### Estado vacío
+Crea un perfil nuevo (que no tenga avances) y entra a **Mi Avance**: debe mostrar
+"Este perfil todavía no ha comenzado a ver ninguna película" con botón al catálogo.
 
-Y un perfil sin datos para ver el estado vacío:
-
-```
-http://localhost:8080/CinemaxPlus/reporte_avance.jsp?perfil=noexiste
-```
+### Guard de sesión
+Sin iniciar sesión, abre directo
+`http://localhost:8080/CinemaxPlus/reporte_avance.jsp`: debe redirigir a `login.jsp`.
+Logueado pero sin perfil elegido: debe redirigir a `usuarios.jsp`.
 
 ---
 
-## Paso 5 — Qué pasa cuando el login esté listo
+## Paso 5 — Checklist de la prueba integrada (5A)
 
-Cuando la **Persona 2** guarde el perfil en la sesión con
-`session.setAttribute("perfilKey", ...)` al elegir perfil, el reporte funcionará
-**solo**, sin el `?perfil=` de la URL:
+Flujo completo a verificar de punta a punta (todos los módulos del equipo):
 
-```
-http://localhost:8080/CinemaxPlus/reporte_avance.jsp
-```
-
-No hay que cambiar código: la página primero busca `perfilKey` en la sesión y solo
-usa el parámetro de la URL si la sesión está vacía (modo prueba). En la entrega
-final se quita ese modo prueba.
+- [ ] Registro → correo de verificación → `verificar.jsp` → cuenta verificada
+- [ ] Login con cuenta verificada
+- [ ] Membresía (primer login) → Regular o Premium (pago simulado)
+- [ ] Elegir/crear perfil → se guarda `perfilKey` en sesión
+- [ ] Catálogo con filtro por género → agregar favorito
+- [ ] Favoritos → listar y eliminar
+- [ ] **Mi Avance** (mi módulo) → barras de progreso correctas
+- [ ] **Mi Cuenta** → cliente + membresía + perfiles
+- [ ] Logout → vuelve a la landing
 
 ---
 
@@ -111,11 +128,11 @@ final se quita ese modo prueba.
 
 | Módulo | Archivo | Estado |
 |--------|---------|--------|
-| 3A Tabla progreso | `progreso.sql` | Hecho — importar con esta guía |
-| 3C Reporte avance | `src/modelo/ReporteDAO.java` (`avance()`) | Hecho |
-| 3C Reporte avance | `WebContent/reporte_avance.jsp` | Hecho |
-| 4D CSS | sección nueva en `css/estilos_cinemax.css` | Adelantado (barras de progreso) |
-| 5A Prueba final | prueba integrada en Tomcat | Pendiente (al final, con todo el equipo) |
+| 3A Tabla progreso | `progreso.sql` | ✅ Hecho — importar con esta guía |
+| 3C Reporte avance | `src/modelo/ReporteDAO.java` (`avance()`) | ✅ Hecho e integrado |
+| 3C Reporte avance | `WebContent/reporte_avance.jsp` | ✅ Hecho (guard real + navbar unificado por el equipo) |
+| 4D CSS | `css/estilos_cinemax.css` (barras + paleta unificada) | ✅ Hecho (equipo unificó paleta) |
+| 5A Prueba final | prueba integrada en Tomcat | 🔜 Pendiente — seguir Pasos 1–5 de esta guía |
 
 ---
 
