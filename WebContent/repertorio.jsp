@@ -176,6 +176,7 @@
       <a href="favoritos.jsp?perfil=<%= perfilEnc %>">Mis Favoritos</a>
       <a href="reporte_avance.jsp">Mi Avance</a>
       <a href="reporte_cuenta.jsp">Mi Cuenta</a>
+      <a href="contactanos.jsp">Nuestro Equipo</a>
     </div>
     <a href="usuarios.jsp" class="user-icon" title="Cambiar perfil">
       <%= (perfilNombre == null || perfilNombre.isEmpty()) ? "?" : esc(perfilNombre.substring(0,1).toUpperCase()) %>
@@ -198,7 +199,7 @@
           <div class="hero-buttons">
             <a href="reproductor.jsp?id=<%= hero.get("id") %>&perfil=<%= perfilEnc %>"
                class="btn btn-primary">&#9654; Reproducir</a>
-            <button class="btn btn-secondary favorite-btn <%= heroFav ? "favorito" : "" %>"
+            <button class="btn btn-secondary hero-fav-btn <%= heroFav ? "favorito" : "" %>"
                     data-id="<%= hero.get("id") %>"
                     onclick="toggleFav(this, <%= hero.get("id") %>)">
               <%= heroFav ? "&#9829;" : "&#9825;" %> <%= heroFav ? "En favoritos" : "Agregar" %>

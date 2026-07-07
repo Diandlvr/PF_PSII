@@ -100,9 +100,9 @@
     </div>
 
     <footer style="position: absolute; bottom: 0; width: 100%; background: transparent; border: none;">
-        <p style="color: var(--cinemax-gray-medium);">&copy; 2025 CinemaxPlus Inc.</p>
-        
-        
+        <p style="color: var(--cinemax-gray-medium);">&copy; 2025 CinemaxPlus Inc. &mdash;
+          <a href="contactanos.jsp" style="color:var(--brand); text-decoration:none;">Nuestro Equipo</a>
+        </p>
     </footer>
 
 </body>

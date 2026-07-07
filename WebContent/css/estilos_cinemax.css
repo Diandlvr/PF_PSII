@@ -813,3 +813,84 @@ footer {
     transition:.3s;
 
 }
+
+/* ============================ Hero favorito (botón inline) ============================ */
+.hero-fav-btn.favorito {
+    background: var(--brand-grad);
+    border-color: transparent;
+    color: #04130d;
+    box-shadow: 0 6px 22px var(--brand-glow);
+}
+
+/* ============================ Contáctanos / Equipo ============================ */
+.team-body { min-height: 100vh; padding-top: 90px; }
+
+.team-header {
+    padding: 50px 50px 10px;
+    text-align: center;
+    animation: fadeInUp 0.6s var(--ease);
+}
+.team-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.6rem; margin-bottom: 12px;
+    background: linear-gradient(90deg, #fff, var(--brand-tint));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.team-subtitle { color: var(--cinemax-gray-light); font-size: 1.1rem; }
+
+.team-grid {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 28px; padding: 40px 20px 80px;
+    max-width: 724px; /* exacto para 3 cartas × 220px + 2 gaps × 28px */
+    margin: 0 auto;
+}
+.team-card {
+    background: rgba(12, 24, 19, 0.74);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--surface-border); border-radius: 22px;
+    padding: 36px 30px; text-align: center; width: 220px;
+    transition: transform 0.4s var(--ease-bounce), box-shadow 0.4s var(--ease), border-color 0.4s var(--ease);
+    animation: fadeInUp 0.6s var(--ease) both;
+    position: relative; overflow: hidden;
+}
+.team-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--brand-grad); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s var(--ease);
+}
+.team-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 26px 60px rgba(0,0,0,0.55), 0 0 36px var(--brand-glow);
+    border-color: rgba(63, 157, 114, 0.45);
+}
+.team-card:hover::before { transform: scaleX(1); }
+
+.team-photo {
+    width: 120px; height: 120px; border-radius: 50%;
+    margin: 0 auto 20px; overflow: hidden;
+    border: 3px solid var(--brand);
+    box-shadow: 0 8px 24px var(--brand-glow);
+}
+.team-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.team-name {
+    font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 700;
+    margin-bottom: 10px; color: #fff;
+}
+.team-cedula {
+    font-size: 13px; color: var(--brand-tint);
+    background: var(--brand-grad-soft);
+    border: 1px solid rgba(63,157,114,0.3);
+    border-radius: 999px; padding: 4px 14px;
+    display: inline-block; margin-bottom: 10px;
+}
+.team-role {
+    font-size: 12px; color: var(--cinemax-gray-medium);
+    font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .team-grid { padding: 24px; gap: 16px; max-width: 100%; }
+    .team-card { width: 140px; padding: 22px 14px; }
+    .team-photo { width: 80px; height: 80px; }
+}
