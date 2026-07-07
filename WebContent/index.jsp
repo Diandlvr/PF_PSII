@@ -31,11 +31,78 @@
             <a href="registro.jsp" class="btn btn-primary btn-large">Reg&iacute;strate gratis</a>
             <a href="login.jsp" class="btn btn-outline btn-large">Iniciar sesi&oacute;n</a>
         </div>
+        
+        <section class="news-section">
+
+    <h2>Noticias e Información</h2>
+
+    <div class="news-layout">
+
+        <!-- VIDEO -->
+
+        <div class="video-box">
+
+            <h3>Video destacado</h3>
+
+            <iframe
+                src="https://www.youtube.com/embed/d9MyW72ELq0"
+                allowfullscreen>
+            </iframe>
+
+            <a href="#" target="_blank">
+                Ver en YouTube
+            </a>
+
+        </div>
+
+        <!-- NOTICIAS -->
+
+        <div class="articles">
+
+            <div class="news-card">
+
+                <h3>Avatar 3 presenta su primer avance oficial</h3>
+
+                <p>
+                    James Cameron mostró nuevas imágenes de Avatar 3,
+                    revelando escenarios nunca antes vistos y nuevos
+                    personajes que llegarán a la gran pantalla.
+                </p>
+
+                <a href="#">
+                    Leer más
+                </a>
+
+            </div>
+
+            <div class="news-card">
+
+                <h3>Los estrenos más esperados del próximo año</h3>
+
+                <p>
+                    Marvel, DC y otros grandes estudios anunciaron las
+                    películas que llegarán próximamente a los cines y
+                    plataformas de streaming.
+                </p>
+
+                <a href="#">
+                    Leer más
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
 
     </div>
 
     <footer style="position: absolute; bottom: 0; width: 100%; background: transparent; border: none;">
         <p style="color: var(--cinemax-gray-medium);">&copy; 2025 CinemaxPlus Inc.</p>
+        
+        
     </footer>
 
 </body>
