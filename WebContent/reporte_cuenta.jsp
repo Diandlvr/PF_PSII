@@ -46,6 +46,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Reporte de Cuenta - CinemaxPlus</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/estilos_cinemax.css">
     <style>
         .report-container {

@@ -8,10 +8,6 @@ import java.sql.SQLException;
 /**
  * DAO para la selección de membresía y el pago premium simulado.
  *
- * Esta clase migra la lógica de PHP:
- * - seleccionarMembresia($tipo)
- * - procesarPagoPremium($pdo, $clienteId, $tarjeta, $cvv)
- *
  * Importante: NO se integra ningún gateway real. El pago solo valida formato.
  */
 public class MembresiaDAO {

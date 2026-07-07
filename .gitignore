@@ -2,8 +2,12 @@
 src/mail.properties
 WebContent/WEB-INF/classes/mail.properties
 
-# Salida de compilación de Eclipse
+# Salida de compilación (Eclipse y javac manual)
 build/
+WebContent/WEB-INF/classes/modelo/
+
+# Backups locales de la BD
+backup/
 
 # Archivos de sistema
 Thumbs.db

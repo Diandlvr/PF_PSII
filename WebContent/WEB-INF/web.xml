@@ -25,6 +25,7 @@
         <url-pattern>/pago.jsp</url-pattern>
         <url-pattern>/reporte_cuenta.jsp</url-pattern>
         <url-pattern>/reporte_avance.jsp</url-pattern>
+        <url-pattern>/reproductor.jsp</url-pattern>
     </filter-mapping>
 
 </web-app>

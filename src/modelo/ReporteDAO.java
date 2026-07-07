@@ -229,7 +229,6 @@ public class ReporteDAO {
         private String titulo;
         private String genero;
         private String imagenUrl;
-        private String youtubeId;
         private int minutoActual;
         private int duracionTotal;
         private Timestamp fechaVisto;
@@ -248,10 +247,6 @@ public class ReporteDAO {
 
         public String getImagenUrl() {
             return imagenUrl;
-        }
-
-        public String getYoutubeId() {
-            return youtubeId;
         }
 
         public int getMinutoActual() {
@@ -320,10 +315,6 @@ public class ReporteDAO {
                     item.titulo = rs.getString("titulo");
                     item.genero = rs.getString("genero");
                     item.imagenUrl = rs.getString("imagen_url");
-
-                    // Se deja vacío porque la BD original no tiene columna youtube_id.
-                    item.youtubeId = "";
-
                     item.minutoActual = rs.getInt("minuto_actual");
                     item.duracionTotal = rs.getInt("duracion_total");
                     item.fechaVisto = rs.getTimestamp("fecha_visto");

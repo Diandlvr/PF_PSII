@@ -33,6 +33,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verificaci&oacute;n &ndash; CinemaxPlus</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="css/estilos_cinemax.css">
   <style>
     .verify-card {

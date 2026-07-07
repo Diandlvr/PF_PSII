@@ -81,6 +81,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Procesar Pago - CinemaxPlus</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="css/estilos_cinemax.css">
     <style>
         /* Usa el fondo global de la marca definido en el CSS */

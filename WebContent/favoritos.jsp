@@ -85,6 +85,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mis Favoritos &ndash; CinemaxPlus</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="css/estilos_cinemax.css">
 </head>
 <body class="favorites-body">
@@ -152,10 +153,9 @@
           <%= esc(fav.get("genero")) %>
         </span>
         <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; justify-content:center;">
-          <a href="https://www.youtube.com/results?search_query=<%= URLEncoder.encode(fav.get("titulo"), "UTF-8") %>"
-             target="_blank" rel="noopener"
+          <a href="reproductor.jsp?id=<%= fav.get("id") %>&perfil=<%= perfilEnc %>"
              class="btn btn-primary" style="padding:8px 18px; font-size:12px;">
-            &#9654; Ver en YouTube
+            &#9654; Reproducir
           </a>
           <button class="btn btn-outline"
                   style="padding:8px 18px; font-size:12px;"

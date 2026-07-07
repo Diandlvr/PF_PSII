@@ -152,6 +152,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gestionar perfiles &ndash; CinemaxPlus</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="css/estilos_cinemax.css">
   <style>
     .modal { display:none; position:fixed; inset:0; background:rgba(3,8,6,0.78);

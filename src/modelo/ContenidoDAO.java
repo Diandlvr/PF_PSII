@@ -14,16 +14,38 @@ public class ContenidoDAO {
 
     public static List<Map<String, String>> getAll() throws SQLException {
         return ejecutar(
-            "SELECT id_contenido, titulo, genero, imagen_url, youtube_id"
+            "SELECT id_contenido, titulo, genero, imagen_url, video_url"
           + " FROM contenido ORDER BY genero, titulo",
             null);
     }
 
     public static List<Map<String, String>> getByGenero(String genero) throws SQLException {
         return ejecutar(
-            "SELECT id_contenido, titulo, genero, imagen_url, youtube_id"
+            "SELECT id_contenido, titulo, genero, imagen_url, video_url"
           + " FROM contenido WHERE genero = ? ORDER BY titulo",
             genero);
+    }
+
+    public static Map<String, String> getById(int id) throws SQLException {
+        String sql = "SELECT id_contenido, titulo, genero, imagen_url, video_url, duracion_min"
+                   + " FROM contenido WHERE id_contenido = ?";
+        try (Connection con = ConexionDB.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, String> fila = new LinkedHashMap<>();
+                    fila.put("id", rs.getString("id_contenido"));
+                    fila.put("titulo", rs.getString("titulo"));
+                    fila.put("genero", rs.getString("genero"));
+                    fila.put("imagen_url", rs.getString("imagen_url"));
+                    fila.put("video_url", rs.getString("video_url"));
+                    fila.put("duracion_min", rs.getString("duracion_min"));
+                    return fila;
+                }
+            }
+        }
+        return null;
     }
 
     public static List<String> getGeneros() throws SQLException {
@@ -50,8 +72,8 @@ public class ContenidoDAO {
                     fila.put("titulo",     rs.getString("titulo"));
                     fila.put("genero",     rs.getString("genero"));
                     fila.put("imagen_url", rs.getString("imagen_url"));
-                    String yt = rs.getString("youtube_id");
-                    fila.put("youtube_id", yt != null ? yt : "");
+                    String video = rs.getString("video_url");
+                    fila.put("video_url", video != null ? video : "");
                     lista.add(fila);
                 }
             }

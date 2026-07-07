@@ -31,7 +31,7 @@ public class FavoritoDAO {
     public static List<Map<String, String>> getContenido(String perfilKey)
             throws SQLException {
         List<Map<String, String>> lista = new ArrayList<>();
-        String sql = "SELECT c.id_contenido, c.titulo, c.genero, c.imagen_url, c.youtube_id,"
+        String sql = "SELECT c.id_contenido, c.titulo, c.genero, c.imagen_url,"
                    + " f.fecha_agregado"
                    + " FROM favs f"
                    + " JOIN contenido c ON f.id_contenido = c.id_contenido"
@@ -47,8 +47,6 @@ public class FavoritoDAO {
                     fila.put("titulo",         rs.getString("titulo"));
                     fila.put("genero",         rs.getString("genero"));
                     fila.put("imagen_url",     rs.getString("imagen_url"));
-                    String yt = rs.getString("youtube_id");
-                    fila.put("youtube_id",     yt != null ? yt : "");
                     fila.put("fecha_agregado", rs.getString("fecha_agregado"));
                     lista.add(fila);
                 }
