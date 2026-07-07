@@ -82,6 +82,11 @@
 
   <footer>
     <p>&copy; 2025 CinemaxPlus &mdash; Todos los derechos reservados</p>
+    <% if (session.getAttribute("clienteId") != null) { %>
+    <p style="margin-top:8px;">
+      <a href="logout.jsp" style="color:var(--brand); text-decoration:none;">Cerrar sesi&oacute;n</a>
+    </p>
+    <% } %>
   </footer>
 
 </body>
